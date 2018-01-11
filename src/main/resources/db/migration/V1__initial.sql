@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS image (
+    hash BIGINT,
+    path VARCHAR(4192),
+    thumbnail VARBINARY(262144)
+);
+
+CREATE INDEX IF NOT EXISTS HASH_IDX ON image(hash);
+CREATE INDEX IF NOT EXISTS PATH_IDX ON image(path);
