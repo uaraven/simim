@@ -7,6 +7,8 @@ import com.google.common.collect.Multimaps;
 import net.ninjacat.simim.core.ImageDatabase;
 import net.ninjacat.simim.core.ImageHash;
 import net.ninjacat.simim.core.SimImage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import java.io.IOException;
@@ -17,8 +19,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class DuplicateFinder {
+
+    private static final double SIMILARITY_THRESHOLD = 0.9;
+    private static final Logger LOGGER = LoggerFactory.getLogger("simim");
 
     private final ImageDatabase imageDatabase;
 
@@ -54,25 +60,39 @@ public class DuplicateFinder {
     /**
      * Scan directory and check for all known duplicates (in folders that have been scanned before)
      *
+     * @return List of collections of duplicate images
+     */
+    public List<Duplicates> findDuplicates() {
+        final Collection<ImageHash> hashes = this.imageDatabase.loadHashes();
+
+        return hashes.parallelStream()
+                .flatMap(h1 -> {
+                            List<SimImage> images = hashes.stream()
+                                    .filter(h2 -> h1 != h2 && h1.similarity(h2) > SIMILARITY_THRESHOLD)
+                                    .flatMap(h -> Stream.concat(this.imageDatabase.loadByHash(h1).stream(), this.imageDatabase.loadByHash(h).stream()))
+                                    .collect(Collectors.toList());
+                            return images.isEmpty() ? Stream.empty() : Stream.of(new Duplicates(h1, images));
+                        }
+                ).collect(Collectors.toList());
+    }
+
+    /**
+     * Scan directory and store all images to database
+     *
      * @param root     Root folder to scan
      * @param callback Optional progress callback
      * @return List of collections of duplicate images
      */
-    public List<Collection<SimImage>> scanGlobal(final Path root, final Consumer<Path> callback) {
+    public List<SimImage> read(final Path root, final Consumer<Path> callback) {
         try {
-            final ListMultimap<ImageHash, SimImage> images = Files.walk(root)
+            return Files.walk(root)
                     .filter(DuplicateFinder::isImageFile)               // only images
                     .filter(path -> !this.imageDatabase.exists(path))   // skip known images
                     .map(path -> getSimImageWithCallback(callback, path))
-                    .flatMap(img -> this.imageDatabase.loadByHash(img.getSignature()).stream())
-                    .collect(Multimaps.toMultimap(SimImage::getSignature, img -> img, MultimapBuilder.hashKeys().arrayListValues()::build));
-            return images.asMap().entrySet().stream()
-                    .filter(entry -> entry.getValue().size() > 1)
-                    .map(Map.Entry::getValue)
                     .collect(Collectors.toList());
 
-        } catch (final IOException e) {
 
+        } catch (final IOException e) {
         }
         return ImmutableList.of();
     }
@@ -97,4 +117,5 @@ public class DuplicateFinder {
         final String s = path.toString().toLowerCase();
         return s.endsWith(".jpg") || s.endsWith(".jpeg") || s.endsWith(".png") || s.endsWith(".gif");
     }
+
 }

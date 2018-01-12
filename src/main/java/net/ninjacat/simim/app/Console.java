@@ -22,15 +22,23 @@ public final class Console {
 
         final DuplicateFinder duplicateFinder = DaggerSimimComponent.create().duplicateFinder();
 
-        final List<Collection<SimImage>> duplicates = duplicateFinder.scan(
-                path,
-                p -> LOGGER.info(p + "\r"));
+        final List<Duplicates> duplicates = duplicateFinder.findDuplicates();
 
-        duplicates.forEach(list -> {
-            System.out.println(list.iterator().next().getSignature());
-            list.forEach(it -> System.out.println(it.getPath()));
-            System.out.println();
+        duplicates.forEach(it -> LOGGER.info("Duplicates:\n {}\n\n", it));
 
-        });
+//        final List<SimImage> duplicates = duplicateFinder.read(
+//                path,
+//                p -> LOGGER.info(p + "\r"));
+//
+//        LOGGER.debug("Sucked in {} images", duplicates.size());
+
+
+
+//        duplicates.forEach(list -> {
+//            System.out.println(list.iterator().next().getSignature());
+//            list.forEach(it -> System.out.println(it.getPath()));
+//            System.out.println();
+//
+//        });
     }
 }

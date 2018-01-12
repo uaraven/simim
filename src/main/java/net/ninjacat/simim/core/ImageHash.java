@@ -5,11 +5,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.image.Image;
 
-import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
+import java.math.BigInteger;
+import java.util.BitSet;
 import java.util.Objects;
 import java.util.stream.IntStream;
 
@@ -19,27 +19,28 @@ import java.util.stream.IntStream;
 public class ImageHash {
 
     private static final int SIZE = 8;
+    private static final int NBITS = 128;
 
-    private final long signature;
+    private final BitSet signature;
 
     @JsonCreator
-    public ImageHash(@JsonProperty("signature") final long signature) {
-        this.signature = signature;
+    public ImageHash(@JsonProperty("signature") final BigInteger signature) {
+        this.signature = BitSet.valueOf(signature.toByteArray());
     }
 
 
-    public ImageHash(final Image image) throws IOException {
+    public ImageHash(final Image image) {
         final BufferedImage gsImage = SwingFXUtils.fromFXImage(image, null);
         final BufferedImage thumbnail = toBufferedImage(
                 gsImage.getScaledInstance(SIZE + 1, SIZE, BufferedImage.SCALE_SMOOTH));
-        ImageIO.write(thumbnail, "jpg", new File("/tmp/gs.jpg"));
-        long gradient = 0;
-        int bit = SIZE * SIZE - 1;
-        for (int y = 0; y < SIZE; y++) {
-            for (int x = 1; x < SIZE; x++) {
-                final int comp = Integer.compareUnsigned(thumbnail.getRGB(x, y), thumbnail.getRGB(x - 1, y));
-                final int gb = (comp < 0 ? 0 : 1) << bit;
-                gradient |= gb;
+        final BitSet gradient = new BitSet(NBITS);
+        int bit = SIZE * SIZE;
+        for (int a = 0; a < SIZE; a++) {
+            for (int b = 1; b < SIZE; b++) {
+                final int phrz = Integer.compareUnsigned(thumbnail.getRGB(b, a), thumbnail.getRGB(b - 1, a));
+                final int pvrt = Integer.compareUnsigned(thumbnail.getRGB(a, b), thumbnail.getRGB(a, b - 1));
+                gradient.set(bit, phrz >= 0);
+                gradient.set(bit * 2, pvrt >= 0);
                 bit -= 1;
             }
         }
@@ -47,16 +48,15 @@ public class ImageHash {
     }
 
     /**
-     *
      * @return The
      */
-    public long getSignature() {
-        return this.signature;
+    public BigInteger getSignature() {
+        return new BigInteger(this.signature.toByteArray());
     }
 
     @Override
     public String toString() {
-        return Long.toUnsignedString(this.signature, 16);
+        return this.signature.toString();
     }
 
     /**
@@ -67,10 +67,10 @@ public class ImageHash {
      * @return similarity index
      */
     public double similarity(final ImageHash other) {
-        final long sameBits = IntStream.range(0, SIZE * SIZE)
-                .filter(i -> ((this.getSignature() >> i) & 1) == ((other.getSignature() >> i) & 1))
+        final long sameBits = IntStream.range(0, NBITS)
+                .filter(i -> this.signature.get(i) == other.signature.get(i))
                 .count();
-        return sameBits / 64.0;
+        return (double) sameBits / NBITS;
     }
 
 

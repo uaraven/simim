@@ -46,6 +46,6 @@ public class SimImageTest {
 
         final double distance = img1.getSignature().similarity(img2.getSignature());
 
-        assertThat(distance < 0.85, is(true));
+        assertThat(distance < 0.7, is(true));
     }
 }

@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS image (
-    hash BIGINT,
+    hash VARCHAR(128),
     path VARCHAR(4192),
     thumbnail VARBINARY(262144)
 );
