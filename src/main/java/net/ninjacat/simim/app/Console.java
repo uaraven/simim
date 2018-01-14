@@ -1,13 +1,11 @@
 package net.ninjacat.simim.app;
 
-import net.ninjacat.simim.core.SimImage;
 import net.ninjacat.simim.di.DaggerSimimComponent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collection;
 import java.util.List;
 
 public final class Console {
@@ -22,6 +20,9 @@ public final class Console {
 
         final DuplicateFinder duplicateFinder = DaggerSimimComponent.create().duplicateFinder();
 
+        duplicateFinder.invalidateDatabase();
+
+//        final List<SimImage> images = duplicateFinder.readInMemory(Paths.get("/home/raven/Pictures"), null);
         final List<Duplicates> duplicates = duplicateFinder.findDuplicates();
 
         duplicates.forEach(it -> LOGGER.info("Duplicates:\n {}\n\n", it));

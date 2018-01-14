@@ -1,7 +1,6 @@
 package net.ninjacat.simim.core;
 
 import com.google.common.collect.ImmutableList;
-import net.ninjacat.simim.app.Duplicates;
 import org.flywaydb.core.Flyway;
 
 import javax.inject.Inject;
@@ -25,6 +24,8 @@ public class ImageDatabase {
     private final PreparedStatement selectByPath;
     private final PreparedStatement countByPath;
     private final PreparedStatement selectByHash;
+    private final PreparedStatement selectPaths;
+    private final PreparedStatement deletePath;
     private final Connection connection;
 
     @Inject
@@ -35,15 +36,17 @@ public class ImageDatabase {
         try {
             this.insertStatement = db.prepareStatement("insert into image values(?, ?, ?)");
             this.selectHashes = db.prepareStatement("select distinct(hash) from image");
+            this.selectPaths = db.prepareStatement("select distinct(path) from image");
             this.selectByHash = db.prepareStatement("select path, thumbnail from image where hash = ?");
             this.selectByPath = db.prepareStatement("select hash, thumbnail from image where path = ?");
             this.countByPath = db.prepareStatement("select count(*) from image where path = ?");
+            this.deletePath = db.prepareStatement("delete from image where path = ?");
         } catch (final SQLException ex) {
             throw new ImageDatabaseException("Failed to create prepared statements", ex);
         }
     }
 
-    public void insertImage(final SimImage simImage) {
+    public synchronized void insertImage(final SimImage simImage) {
         try {
             this.insertStatement.setString(1, simImage.getSignature().getSignature().toString());
             this.insertStatement.setString(2, simImage.getPath().toString());
@@ -51,13 +54,16 @@ public class ImageDatabase {
             this.insertStatement.execute();
             this.connection.commit();
         } catch (final Exception ex) {
+            quietRollback();
             throw new ImageDatabaseException("Failed to insert image " + simImage, ex);
-        } finally {
-            try {
-                this.connection.rollback();
-            } catch (final SQLException ignored) {
+        }
+    }
 
-            }
+    private void quietRollback() {
+        try {
+            this.connection.rollback();
+        } catch (final SQLException ignored) {
+
         }
     }
 
@@ -73,6 +79,31 @@ public class ImageDatabase {
             }
         } catch (final Exception ex) {
             throw new ImageDatabaseException("Failed to load hashes", ex);
+        }
+    }
+
+    public void delete(final Path path) {
+        try {
+            this.deletePath.setString(1, path.toString());
+            this.deletePath.execute();
+            this.connection.commit();
+        } catch (final Exception ex) {
+            quietRollback();
+            throw new ImageDatabaseException("Failed to delete by path " + path, ex);
+        }
+    }
+
+    public Collection<Path> loadPaths() {
+        try {
+            try (final ResultSet resultSet = this.selectPaths.executeQuery()) {
+                final ImmutableList.Builder<Path> builder = ImmutableList.builder();
+                while (resultSet.next()) {
+                    builder.add(Paths.get(resultSet.getString(1)));
+                }
+                return builder.build();
+            }
+        } catch (final Exception ex) {
+            throw new ImageDatabaseException("Failed to load paths", ex);
         }
     }
 
