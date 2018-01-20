@@ -28,6 +28,7 @@ public class DctTest {
             {  -1.03,   0.18,   0.42,  -2.42,  -0.88,  -3.02,   4.12, -0.66},
             {  -0.17,   0.14,  -1.07,  -4.19,  -1.17,  -0.10,   0.50,  1.68}
     };
+    private static final double ERROR = 0.1;
 
     @Test
     public void shouldCalculateDct() {
@@ -36,8 +37,9 @@ public class DctTest {
         for (int i = 0; i < dct.length; i++) {
             for (int j = 0; j < dct[0].length; j++) {
                 assertThat(String.format("Should match at position (%d, %d)", i, j),
-                        dct[i][j], closeTo(expectedDct[i][j], 0.1));
+                        dct[i][j], closeTo(expectedDct[i][j], ERROR));
             }
         }
     }
+
 }
