@@ -1,5 +1,9 @@
 package net.ninjacat.simim.core;
 
+
+/**
+ * Discrete cosine transform implementation. Only performs forward transform
+ */
 public final class Dct {
 
     private static final double INV_SQ = 1 / Math.sqrt(2);
@@ -8,6 +12,11 @@ public final class Dct {
     private Dct() {
     }
 
+    /**
+     * Performs forward DCT on a supplied "image" - two dimensional data array
+     * @param image Source data for DCT
+     * @return two-dimensional double array of DCT coefficients
+     */
     public static double[][] forward(final int[][] image) {
         final int maxV = image.length;
         final int maxU = image[0].length;
@@ -20,7 +29,6 @@ public final class Dct {
 
             }
         }
-
         return result;
     }
 

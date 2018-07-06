@@ -15,6 +15,9 @@ import java.util.function.Supplier;
 import static javafx.embed.swing.SwingFXUtils.fromFXImage;
 import static javafx.embed.swing.SwingFXUtils.toFXImage;
 
+/**
+ * Image wrapper used internally when searching for similar images
+ */
 public class SimImage {
     private static final int THUMBNAIL_DIMENSION = 320;
     private final Path path;

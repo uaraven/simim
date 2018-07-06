@@ -7,7 +7,14 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.BitSet;
 
+/**
+ * Enumeration of hash algorithms for images
+ */
 public enum  HashAlgorithm {
+    /**
+     * Difference hash implementation
+     * See: http://www.hackerfactor.com/blog/index.php?/archives/529-Kind-of-Like-That.html
+     */
     DHash {
         private static final int SIZE = 8;
 
@@ -35,6 +42,11 @@ public enum  HashAlgorithm {
             return 128;
         }
     },
+
+    /**
+     * Another perceptual hash. Kind of like dHash but doesn't calculate difference by rows and columns.
+     * Despite the name this is *not* a pHash implementation, as pHash works on DCT of the original image
+     */
     PHash {
 
         private static final int THUMBNAIL_SIZE = 32;

@@ -20,7 +20,7 @@ public enum Os {
     },
     MacOs {
         @Override
-        public Path getAppData(String appName) {
+        public Path getAppData(final String appName) {
             return HOME.resolve("Library").resolve(appName);
         }
     };
